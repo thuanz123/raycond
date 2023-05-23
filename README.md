@@ -8,6 +8,9 @@ https://ray-cond.github.io/<br>
 
 Abstract: *Multi-view image generation attracts particular attention these days due to its promising 3D-related applications, e.g., image viewpoint editing. Most existing methods follow a paradigm where a 3D representation is first synthesized, and then rendered into 2D images to ensure photo-consistency across viewpoints. However, such explicit bias for photo-consistency sacrifices photo-realism, causing geometry artifacts and loss of fine-scale details when these methods are applied to edit real images. To address this issue, we propose ray conditioning, a geometry-free alternative that relaxes the photo-consistency constraint. Our method generates multi-view images by conditioning a 2D GAN on a light field prior. With explicit viewpoint control, state-of-the-art photo-realism and identity consistency, our method is particularly suited for the viewpoint editing task.*
 
+## Disclaimer
+I'm not related to the authors in any ways.
+
 ## Requirements
 
 * Linux and Windows are supported, but we recommend Linux for performance and compatibility reasons.
@@ -154,6 +157,7 @@ References:
 5. [Improved Techniques for Training GANs](https://arxiv.org/abs/1606.03498), Salimans et al. 2016
 
 ## Citation
+```bibtex
 @misc{chen2023:ray-conditioning,
     title = {Ray Conditioning: Trading Photo-realism for Photo-Consistency in Multi-view Image Generation},
     author = {Eric Ming Chen and Sidhanth Holalkere and Ruyu Yan and Kai Zhang and Abe Davis},
@@ -162,3 +166,4 @@ References:
     archivePrefix={arXiv},
     primaryClass={cs.CV}
 }
+```
