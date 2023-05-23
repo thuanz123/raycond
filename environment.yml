@@ -1,4 +1,4 @@
-name: ray-cond
+name: raycond
 channels:
   - pytorch
   - nvidia
