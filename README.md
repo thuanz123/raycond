@@ -20,7 +20,7 @@ I'm not related to the authors in any ways.
 * GCC 7 or later (Linux) or Visual Studio (Windows) compilers.  Recommended GCC version depends on CUDA version, see for example [CUDA 11.4 system requirements](https://docs.nvidia.com/cuda/archive/11.4.1/cuda-installation-guide-linux/index.html#system-requirements).
 * Python libraries: see [environment.yml](./environment.yml) for exact library dependencies.  You can use the following commands with Miniconda3 to create and activate your StyleGAN3 Python environment:
   - `conda env create -f environment.yml`
-  - `conda activate ray-cond`
+  - `conda activate raycond`
 * Docker users:
   - Ensure you have correctly installed the [NVIDIA container runtime](https://docs.docker.com/config/containers/resource_constraints/#gpu).
   - Use the [provided Dockerfile](./Dockerfile) to build an image with the required library dependencies.
