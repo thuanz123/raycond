@@ -20,7 +20,6 @@ Options:
   --gpus INT                      Number of GPUs to use  [required]
   --batch INT                     Total batch size  [required]
   --gamma FLOAT                   R1 regularization weight  [required]
-  --cond BOOL                     Train conditional model  [default: False]
   --mirror BOOL                   Enable dataset x-flips  [default: False]
   --aug [noaug|ada|fixed]         Augmentation mode  [default: ada]
   --resume [PATH|URL]             Resume from given network pickle
