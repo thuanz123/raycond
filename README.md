@@ -75,7 +75,7 @@ You can use pre-trained networks in your own Python code as follows:
 with open('ffhq.pkl', 'rb') as f:
     G = pickle.load(f)['G_ema'].cuda()  # torch.nn.Module
 z = torch.randn([1, G.z_dim]).cuda()    # latent codes
-c = None                                # class labels (not used in this example)
+c = torch.randn([1, 25]).cuda()         # camera pose labels
 img = G(z, c)                           # NCHW, float32, dynamic range [-1, +1], no truncation
 ```
 
