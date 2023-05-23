@@ -54,7 +54,7 @@ def plucker_sample(cam2world_matrix, intrinsics, resolution):
 
     x_cam = uv[:, :, 0].view(N, -1)
     y_cam = uv[:, :, 1].view(N, -1)
-    z_cam = torch.ones((N, M), device=cam2world_matrix.device)
+    z_cam = torch.ones((N, M ** 2), device=cam2world_matrix.device)
 
     x_lift = (x_cam - cx.unsqueeze(-1) + cy.unsqueeze(-1)*sk.unsqueeze(-1)/fy.unsqueeze(-1) - sk.unsqueeze(-1)*y_cam/fy.unsqueeze(-1)) / fx.unsqueeze(-1) * z_cam
     y_lift = (y_cam - cy.unsqueeze(-1)) / fy.unsqueeze(-1) * z_cam
@@ -131,7 +131,7 @@ def modulated_conv2d(
     # Execute as one fused op using grouped convolution.
     with misc.suppress_tracer_warnings(): # this value will be treated as a constant
         batch_size = int(batch_size)
-    misc.assert_shape(x, [batch_size, in_channels + 6, None, None])
+    misc.assert_shape(x, [batch_size, in_channels, None, None])
     x = x.reshape(1, -1, *x.shape[2:])
     w = w.reshape(-1, in_channels, kh, kw)
     x = conv2d_resample.conv2d_resample(x=x, w=w.to(x.dtype), f=resample_filter, up=up, down=down, padding=padding, groups=batch_size, flip_weight=flip_weight)
@@ -245,7 +245,9 @@ class MappingNetwork(torch.nn.Module):
         z_dim,                      # Input latent (Z) dimensionality, 0 = no latent.
         w_dim,                      # Intermediate latent (W) dimensionality.
         num_ws,                     # Number of intermediate latents to output, None = do not broadcast.
+        c_dim           = 0,        # Conditioning label (C) dimensionality, 0 = no labels.
         num_layers      = 8,        # Number of mapping layers.
+        embed_features  = None,     # Label embedding dimensionality, None = same as w_dim.
         layer_features  = None,     # Number of intermediate features in the mapping layers, None = same as w_dim.
         activation      = 'lrelu',  # Activation function: 'relu', 'lrelu', etc.
         lr_multiplier   = 0.01,     # Learning rate multiplier for the mapping layers.
@@ -255,13 +257,20 @@ class MappingNetwork(torch.nn.Module):
         self.z_dim = z_dim
         self.w_dim = w_dim
         self.num_ws = num_ws
+        self.c_dim = c_dim
         self.num_layers = num_layers
         self.w_avg_beta = w_avg_beta
 
+        if embed_features is None:
+            embed_features = w_dim
+        if c_dim == 0:
+            embed_features = 0
         if layer_features is None:
             layer_features = w_dim
-        features_list = [z_dim] + [layer_features] * (num_layers - 1) + [w_dim]
+        features_list = [z_dim + embed_features] + [layer_features] * (num_layers - 1) + [w_dim]
 
+        if c_dim > 0:
+            self.embed = FullyConnectedLayer(c_dim, embed_features)
         for idx in range(num_layers):
             in_features = features_list[idx]
             out_features = features_list[idx + 1]
@@ -271,13 +280,17 @@ class MappingNetwork(torch.nn.Module):
         if num_ws is not None and w_avg_beta is not None:
             self.register_buffer('w_avg', torch.zeros([w_dim]))
 
-    def forward(self, z, truncation_psi=1, truncation_cutoff=None, update_emas=False):
+    def forward(self, z, c=None, truncation_psi=1, truncation_cutoff=None, update_emas=False):
         # Embed, normalize, and concat inputs.
         x = None
         with torch.autograd.profiler.record_function('input'):
             if self.z_dim > 0:
                 misc.assert_shape(z, [None, self.z_dim])
                 x = normalize_2nd_moment(z.to(torch.float32))
+            if self.c_dim > 0:
+                misc.assert_shape(c, [None, self.c_dim])
+                y = normalize_2nd_moment(self.embed(c.to(torch.float32)))
+                x = torch.cat([x, y], dim=1) if x is not None else y
 
         # Main layers.
         for idx in range(self.num_layers):
@@ -337,7 +350,7 @@ class SynthesisLayer(torch.nn.Module):
         self.padding = kernel_size // 2
         self.act_gain = bias_act.activation_funcs[activation].def_gain
 
-        self.affine = FullyConnectedLayer(w_dim, in_channels, bias_init=1)
+        self.affine = FullyConnectedLayer(w_dim, in_channels + 6, bias_init=1)
         memory_format = torch.channels_last if channels_last else torch.contiguous_format
         self.weight = torch.nn.Parameter(torch.randn([out_channels, in_channels + 6, kernel_size, kernel_size]).to(memory_format=memory_format))
         if use_noise:
@@ -383,7 +396,7 @@ class ToRGBLayer(torch.nn.Module):
         self.out_channels = out_channels
         self.w_dim = w_dim
         self.conv_clamp = conv_clamp
-        self.affine = FullyConnectedLayer(w_dim, in_channels, bias_init=1)
+        self.affine = FullyConnectedLayer(w_dim, in_channels + 6, bias_init=1)
         memory_format = torch.channels_last if channels_last else torch.contiguous_format
         self.weight = torch.nn.Parameter(torch.randn([out_channels, in_channels + 6, kernel_size, kernel_size]).to(memory_format=memory_format))
         self.bias = torch.nn.Parameter(torch.zeros([out_channels]))
