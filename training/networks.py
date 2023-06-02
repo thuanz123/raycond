@@ -48,7 +48,10 @@ def plucker_sample(cam2world_matrix, intrinsics, resolution):
     cy = intrinsics[:, 1, 2]
     sk = intrinsics[:, 0, 1]
 
-    uv = torch.stack(torch.meshgrid(torch.arange(M, dtype=torch.float32, device=cam2world_matrix.device), torch.arange(M, dtype=torch.float32, device=cam2world_matrix.device), indexing='ij')) * (1./M) + (0.5/M)
+    uv = torch.stack(torch.meshgrid(
+        torch.arange(M, dtype=torch.float32, device=cam2world_matrix.device), 
+        torch.arange(M, dtype=torch.float32, device=cam2world_matrix.device),
+    )) * (1./M) + (0.5/M)
     uv = uv.flip(0).reshape(2, -1).transpose(1, 0)
     uv = uv.unsqueeze(0).repeat(cam2world_matrix.shape[0], 1, 1)
 
