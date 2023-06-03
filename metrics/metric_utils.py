@@ -55,16 +55,11 @@ def get_feature_detector(url, device=torch.device('cpu'), num_gpus=1, rank=0, ve
 #----------------------------------------------------------------------------
 
 def iterate_random_labels(opts, batch_size):
-    if opts.G.c_dim == 0:
-        c = torch.zeros([batch_size, opts.G.c_dim], device=opts.device)
-        while True:
-            yield c
-    else:
-        dataset = dnnlib.util.construct_class_by_name(**opts.dataset_kwargs)
-        while True:
-            c = [dataset.get_label(np.random.randint(len(dataset))) for _i in range(batch_size)]
-            c = torch.from_numpy(np.stack(c)).pin_memory().to(opts.device)
-            yield c
+    dataset = dnnlib.util.construct_class_by_name(**opts.dataset_kwargs)
+    while True:
+        c = [dataset.get_label(np.random.randint(len(dataset))) for _i in range(batch_size)]
+        c = torch.from_numpy(np.stack(c)).pin_memory().to(opts.device)
+        yield c
 
 #----------------------------------------------------------------------------
 
