@@ -38,7 +38,7 @@ def plucker_sample(cam2world_matrix, intrinsics, resolution):
         intrinsics: (N, 3, 3)
         resolution: int
     ouput:
-        pluckers: (N, 5, M, M)
+        pluckers: (N, 6, M, M)
     """
     N, M = cam2world_matrix.shape[0], resolution
     cam_locs_world = cam2world_matrix[:, :3, 3]
