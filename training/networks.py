@@ -12,6 +12,8 @@ Matches the original implementation of configs E-F by Karras et al. at
 https://github.com/NVlabs/stylegan2/blob/master/training/networks_stylegan2.py"""
 
 import numpy as np
+from pkg_resources import parse_version
+
 import torch
 from torch_utils import misc
 from torch_utils import persistence
@@ -19,6 +21,10 @@ from torch_utils.ops import conv2d_resample
 from torch_utils.ops import upfirdn2d
 from torch_utils.ops import bias_act
 from torch_utils.ops import fma
+
+#----------------------------------------------------------------------------
+
+_use_pytorch_1_10_api = parse_version(torch.__version__) >= parse_version('1.10') # Allow pytorch >= 1.10
 
 #----------------------------------------------------------------------------
 
@@ -48,10 +54,18 @@ def plucker_sample(cam2world_matrix, intrinsics, resolution):
     cy = intrinsics[:, 1, 2]
     sk = intrinsics[:, 0, 1]
 
-    uv = torch.stack(torch.meshgrid(
-        torch.arange(M, dtype=torch.float32, device=cam2world_matrix.device), 
-        torch.arange(M, dtype=torch.float32, device=cam2world_matrix.device),
-    )) * (1./M) + (0.5/M)
+    if not _use_pytorch_1_10_api:
+        uv = torch.stack(torch.meshgrid(
+            torch.arange(M, dtype=torch.float32, device=cam2world_matrix.device), 
+            torch.arange(M, dtype=torch.float32, device=cam2world_matrix.device),
+        )) * (1./M) + (0.5/M)
+    else:
+        uv = torch.stack(torch.meshgrid(
+            torch.arange(M, dtype=torch.float32, device=cam2world_matrix.device), 
+            torch.arange(M, dtype=torch.float32, device=cam2world_matrix.device),
+            indexing='ij',
+        )) * (1./M) + (0.5/M)
+    
     uv = uv.flip(0).reshape(2, -1).transpose(1, 0)
     uv = uv.unsqueeze(0).repeat(cam2world_matrix.shape[0], 1, 1)
 
